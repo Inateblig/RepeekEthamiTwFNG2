@@ -9,53 +9,56 @@
 
 #include <time.h>
 
+/* Repeek */
+#include "../repeekethami.h"
+
 CGameControllerFNG24Teams::CGameControllerFNG24Teams(class CGameContext *pGameServer)
 : IGameController((class CGameContext*)pGameServer)
 {
-	m_pGameType = "fng2";
+	m_pGameType = "fng24teams+";
 	m_GameFlags = GAMEFLAG_TEAMS;
-	
+
 	if(m_Config.m_SvTournamentMode) m_Warmup = 60*Server()->TickSpeed();
-	else m_Warmup = m_Config.m_SvWarmup;	
-	
+	else m_Warmup = m_Config.m_SvWarmup;
+
 	m_a4Teamscore[TEAM_RED] = 0;
 	m_a4Teamscore[TEAM_BLUE] = 0;
 	m_a4Teamscore[TEAM_GREEN] = 0;
 	m_a4Teamscore[TEAM_PURPLE] = 0;
-	
+
 	m_a4TeamLastScore[TEAM_RED] = 0;
 	m_a4TeamLastScore[TEAM_BLUE] = 0;
 	m_a4TeamLastScore[TEAM_GREEN] = 0;
 	m_a4TeamLastScore[TEAM_PURPLE] = 0;
-	
+
 	m_a4TeamNumSpawnPoints[0] = 0;
 	m_a4TeamNumSpawnPoints[1] = 0;
 	m_a4TeamNumSpawnPoints[2] = 0;
 	m_a4TeamNumSpawnPoints[3] = 0;
 	m_a4TeamNumSpawnPoints[4] = 0;
-	
+
 	pGameServer->AddServerCommand("join", "join the blue, red, green or purple team (e.g. /join r (or /join red) to join the red team)", 0, CmdJoinTeam);
 }
 
 CGameControllerFNG24Teams::CGameControllerFNG24Teams(class CGameContext *pGameServer, CConfiguration& pConfig)
 : IGameController((class CGameContext*)pGameServer, pConfig)
 {
-	m_pGameType = "fng2";
+	m_pGameType = "fng24teams";
 	m_GameFlags = GAMEFLAG_TEAMS;
-	
+
 	if(m_Config.m_SvTournamentMode) m_Warmup = 60*Server()->TickSpeed();
 	else m_Warmup = m_Config.m_SvWarmup;
-	
+
 	m_a4Teamscore[TEAM_RED] = 0;
 	m_a4Teamscore[TEAM_BLUE] = 0;
 	m_a4Teamscore[TEAM_GREEN] = 0;
 	m_a4Teamscore[TEAM_PURPLE] = 0;
-	
+
 	m_a4TeamLastScore[TEAM_RED] = 0;
 	m_a4TeamLastScore[TEAM_BLUE] = 0;
 	m_a4TeamLastScore[TEAM_GREEN] = 0;
 	m_a4TeamLastScore[TEAM_PURPLE] = 0;
-	
+
 	m_a4TeamNumSpawnPoints[0] = 0;
 	m_a4TeamNumSpawnPoints[1] = 0;
 	m_a4TeamNumSpawnPoints[2] = 0;
@@ -204,17 +207,17 @@ void CGameControllerFNG24Teams::Tick()
 		if(!m_UnpauseTimer)
 			GameServer()->m_World.m_Paused = false;
 	}
-	
-	if(mem_comp(m_a4Teamscore, m_a4TeamLastScore, sizeof(int)*4) != 0){		
+
+	if(mem_comp(m_a4Teamscore, m_a4TeamLastScore, sizeof(int)*4) != 0){
 		char buff[300];
 		str_format(buff, sizeof(buff), "Red team: %d, blue team: %d, green team: %d, purple team: %d", m_a4Teamscore[0], m_a4Teamscore[1], m_a4Teamscore[2], m_a4Teamscore[3]);
 		GameServer()->SendBroadcast(buff, -1);
-		
+
 		mem_copy(m_a4TeamLastScore, m_a4Teamscore, sizeof(int)*4);
 	}
-	
+
 	// game is Paused
-	if(GameServer()->m_World.m_Paused) {		
+	if(GameServer()->m_World.m_Paused) {
 		if (m_GameOverTick == -1) {
 		}
 		if(GameServer()->m_World.m_Paused) ++m_RoundStartTick;
@@ -242,14 +245,14 @@ void CGameControllerFNG24Teams::Tick()
 		// are teams unbalanced?
 		//we will use the team with most players against team with lowest... until it is balanced
 		bool tryBalance = true;
-		
+
 		while(tryBalance){
 			int TeamMax = -1;
 			int TeamMin = -1;
-			
+
 			int TeamMaxCount = 0;
 			int TeamMinCount = MAX_CLIENTS + 1;
-			
+
 			for(int i = 0; i < 4; ++i){
 				if(TeamMaxCount < aT[i]){
 					TeamMax = i;
@@ -260,7 +263,7 @@ void CGameControllerFNG24Teams::Tick()
 					TeamMinCount = aT[i];
 				}
 			}
-			
+
 			if(TeamMax != -1 && TeamMin != -1 && absolute(aT[TeamMax]-aT[TeamMin]) >= 2)
 			{
 				int M = TeamMax;
@@ -360,7 +363,7 @@ void CGameControllerFNG24Teams::DoWincheck()
 				} else {
 					EndRound();
 				}
-			}			
+			}
 		}
 		else
 		{
@@ -427,7 +430,7 @@ void CGameControllerFNG24Teams::OnCharacterSpawn(class CCharacter *pChr)
 	pChr->GiveWeapon(WEAPON_HAMMER, -1);
 	pChr->GiveWeapon(WEAPON_RIFLE, -1);
 }
-	
+
 int CGameControllerFNG24Teams::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon)
 {
 	// do scoreing
@@ -448,7 +451,7 @@ int CGameControllerFNG24Teams::OnCharacterDeath(class CCharacter *pVictim, class
 		} else if(Weapon == WEAPON_SPIKE_NORMAL){
 			if(pKiller->GetCharacter()) GameServer()->MakeLaserTextPoints(pKiller->GetCharacter()->m_Pos, pKiller->GetCID(), m_Config.m_SvPlayerScoreSpikeNormal);
 			pKiller->m_Stats.m_GrabsNormal++;
-			pVictim->GetPlayer()->m_Stats.m_Deaths++;		
+			pVictim->GetPlayer()->m_Stats.m_Deaths++;
 			m_a4Teamscore[pKiller->GetTeam()] += m_Config.m_SvTeamScoreSpikeNormal;
 			pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*.5f;
 		} else if(Weapon == WEAPON_SPIKE_RED){
@@ -458,7 +461,7 @@ int CGameControllerFNG24Teams::OnCharacterDeath(class CCharacter *pVictim, class
 				m_a4Teamscore[TEAM_RED] += m_Config.m_SvTeamScoreSpikeTeam;
 				if(pKiller->GetCharacter()) GameServer()->MakeLaserTextPoints(pKiller->GetCharacter()->m_Pos, pKiller->GetCID(), m_Config.m_SvPlayerScoreSpikeTeam);
 			} else {
-				pKiller->m_Stats.m_GrabsFalse++;				
+				pKiller->m_Stats.m_GrabsFalse++;
 				m_a4Teamscore[pKiller->GetTeam()] += m_Config.m_SvTeamScoreSpikeFalse;
 				if(pKiller->GetCharacter()) GameServer()->MakeLaserTextPoints(pKiller->GetCharacter()->m_Pos, pKiller->GetCID(), m_Config.m_SvPlayerScoreSpikeFalse);
 			}
@@ -510,7 +513,7 @@ int CGameControllerFNG24Teams::OnCharacterDeath(class CCharacter *pVictim, class
 		}
 	}
 	if(Weapon == WEAPON_SELF){
-		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*.75f;		
+		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*.75f;
 	} else if (Weapon == WEAPON_WORLD)
 		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*.75f;
 	return 0;
@@ -534,13 +537,13 @@ void CGameControllerFNG24Teams::EndRound()
 {
 	IGameController::EndRound();
 	GameServer()->SendRoundStats();
-	
+
 	char buff[300];
 	int BuffOffset = 0;
-	
+
 	int WinnerTeams = 0;
 	int HighestScore = -1;
-	
+
 	for(int i = 0; i < 4; ++i){
 		if(HighestScore < m_a4Teamscore[i]){
 			HighestScore = m_a4Teamscore[i];
@@ -549,7 +552,7 @@ void CGameControllerFNG24Teams::EndRound()
 			WinnerTeams |= 1 << i;
 		}
 	}
-	
+
 	int WinnerCount = 0;
 	for(int i = 0; i < 4; ++i){
 		if((1 << i) & WinnerTeams) {
@@ -562,7 +565,7 @@ void CGameControllerFNG24Teams::EndRound()
 			++WinnerCount;
 		}
 	}
-	
+
 	str_format((buff + BuffOffset), sizeof(buff) - BuffOffset, " wins");
 	GameServer()->SendBroadcast(buff, -1);
 	GameServer()->SendChat(-1, CGameContext::CHAT_ALL, buff);
@@ -602,7 +605,7 @@ void CGameControllerFNG24Teams::StartRound()
 	m_a4Teamscore[TEAM_BLUE] = 0;
 	m_a4Teamscore[TEAM_GREEN] = 0;
 	m_a4Teamscore[TEAM_PURPLE] = 0;
-	
+
 	m_a4TeamLastScore[TEAM_RED] = 0;
 	m_a4TeamLastScore[TEAM_BLUE] = 0;
 	m_a4TeamLastScore[TEAM_GREEN] = 0;
@@ -668,7 +671,7 @@ int CGameControllerFNG24Teams::GetAutoTeam(int NotThisID)
 bool CGameControllerFNG24Teams::CanJoinTeam(int Team, int NotThisID)
 {
 	if(m_Config.m_SvTournamentMode) return false;
-	
+
 	if(Team == TEAM_SPECTATORS || (GameServer()->m_apPlayers[NotThisID] && GameServer()->m_apPlayers[NotThisID]->GetTeam() != TEAM_SPECTATORS))
 		return true;
 
@@ -698,13 +701,13 @@ bool CGameControllerFNG24Teams::CheckTeamBalance()
 		if(pP && pP->GetTeam() != TEAM_SPECTATORS)
 			aT[pP->GetTeam()]++;
 	}
-	
+
 	int TeamMax = -1;
 	int TeamMin = -1;
-	
+
 	int TeamMaxCount = 0;
 	int TeamMinCount = MAX_CLIENTS + 1;
-	
+
 	for(int i = 0; i < 4; ++i){
 		if(TeamMaxCount < aT[i]){
 			TeamMax = i;
@@ -715,7 +718,7 @@ bool CGameControllerFNG24Teams::CheckTeamBalance()
 			TeamMinCount = aT[i];
 		}
 	}
-	
+
 	char aBuf[256];
 	if(absolute(aT[TeamMax]-aT[TeamMin]) >= 2)
 	{
@@ -740,7 +743,7 @@ bool CGameControllerFNG24Teams::CanChangeTeam(CPlayer *pPlayer, int JoinTeam)
 		GameServer()->SendChatTarget(pPlayer->GetCID(), "You can't change Teams in Tournaments.");
 		return false;
 	}
-	
+
 	int aT[4] = {0,0,0,0};
 
 	if (!IsTeamplay() || JoinTeam == TEAM_SPECTATORS || !m_Config.m_SvTeambalanceTime)
@@ -757,7 +760,7 @@ bool CGameControllerFNG24Teams::CanChangeTeam(CPlayer *pPlayer, int JoinTeam)
 	aT[JoinTeam]++;
 	if (pPlayer->GetTeam() != TEAM_SPECTATORS)
 		aT[pPlayer->GetTeam()]--;
-	
+
 	int SmallestTeam = 0;
 	int SmallestTeamSize = MAX_CLIENTS + 1;
 	//get the smallest team here
@@ -831,9 +834,9 @@ void CGameControllerFNG24Teams::ShuffleTeams()
 					ExcludeTeam[2] = true;
 				if(CounterPurple == PlayerTeam)
 					ExcludeTeam[3] = true;
-				
+
 				int rnd = (rand() % 4);
-				
+
 				bool found = false;
 				while(!found){
 					if(rnd == 0)
@@ -873,7 +876,7 @@ void CGameControllerFNG24Teams::ShuffleTeams()
 						}
 					}
 				}
-				
+
 				TeamPlayersAfterShuffle[GameServer()->m_apPlayers[i]->GetTeam()].SetBitOfPosition(i);
 			}
 		}
@@ -885,8 +888,8 @@ bool CGameControllerFNG24Teams::UseFakeTeams(){
 }
 
 
-void CGameControllerFNG24Teams::CmdJoinTeam(CGameContext* pContext, int pClientID, const char** pArgs, int ArgNum){	
-	if(ArgNum >= 1){		
+void CGameControllerFNG24Teams::CmdJoinTeam(CGameContext* pContext, int pClientID, const char** pArgs, int ArgNum){
+	if(ArgNum >= 1){
 		int Team = -1;
 		if(str_comp_nocase(pArgs[0], "blue") == 0 || str_comp_nocase(pArgs[0], "b") == 0){
 			Team = TEAM_BLUE;
@@ -899,11 +902,11 @@ void CGameControllerFNG24Teams::CmdJoinTeam(CGameContext* pContext, int pClientI
 		} else if(str_comp_nocase(pArgs[0], "spec") == 0 || str_comp_nocase(pArgs[0], "spectator") == 0 || str_comp_nocase(pArgs[0], "s") == 0){
 			Team = TEAM_SPECTATORS;
 		}
-		
+
 		CPlayer* pPlayer = pContext->m_apPlayers[pClientID];
 		if ((pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsFrozen()) || (pPlayer->GetTeam() == Team || (pContext->m_pController->GetConfig()->m_SvSpamprotection && pPlayer->m_LastSetTeam && pPlayer->m_LastSetTeam + pContext->Server()->TickSpeed() * 3 > pContext->Server()->Tick())))
 			return;
-		
+
 		if(pPlayer->m_TeamChangeTick > pContext->Server()->Tick())
 		{
 			pPlayer->m_LastSetTeam = pContext->Server()->Tick();

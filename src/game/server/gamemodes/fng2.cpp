@@ -7,21 +7,24 @@
 #include <string.h>
 #include <stdio.h>
 
+/* Repeek */
+#include "../repeekethami.h"
+
 CGameControllerFNG2::CGameControllerFNG2(class CGameContext *pGameServer)
 : IGameController((class CGameContext*)pGameServer)
 {
-	m_pGameType = "fng2";
+	m_pGameType = "fng2+";
 	m_GameFlags = GAMEFLAG_TEAMS;
-	
+
 	m_Warmup = m_Config.m_SvWarmup;
 }
 
 CGameControllerFNG2::CGameControllerFNG2(class CGameContext *pGameServer, CConfiguration& pConfig)
 : IGameController((class CGameContext*)pGameServer, pConfig)
 {
-	m_pGameType = "fng2";
+	m_pGameType = "fng2+";
 	m_GameFlags = GAMEFLAG_TEAMS;
-	
+
 	m_Warmup = m_Config.m_SvWarmup;
 }
 
@@ -38,7 +41,7 @@ void CGameControllerFNG2::Tick()
 	if(m_GameOverTick != -1)
 	{
 		// game over.. wait for restart
-		if(Server()->Tick() > m_GameOverTick+Server()->TickSpeed()*10)
+		if(Server()->Tick() > m_GameOverTick+Server()->TickSpeed()*3)
 		{
 			if(m_Config.m_SvTournamentMode){
 				StartRound();
@@ -56,9 +59,9 @@ void CGameControllerFNG2::Tick()
 			GameServer()->m_World.m_Paused = false;
 	}
 
-	
+
 	// game is Paused
-	if(GameServer()->m_World.m_Paused) {		
+	if(GameServer()->m_World.m_Paused) {
 		if (m_GameOverTick == -1) {
 		}
 		if(GameServer()->m_World.m_Paused) ++m_RoundStartTick;
@@ -177,7 +180,7 @@ void CGameControllerFNG2::DoWincheck()
 					EndRound();
 				else
 					m_SuddenDeath = 1;
-			}			
+			}
 		}
 		else
 		{
@@ -214,11 +217,11 @@ void CGameControllerFNG2::DoWincheck()
 void CGameControllerFNG2::Snap(int SnappingClient)
 {
 	IGameController::Snap(SnappingClient);
-	
+
 	CNetObj_GameData *pGameDataObj = (CNetObj_GameData *)Server()->SnapNewItem(NETOBJTYPE_GAMEDATA, 0, sizeof(CNetObj_GameData));
 	if(!pGameDataObj)
 		return;
-	
+
 	/*pGameDataObj->m_FlagCarrierRed = FLAG_ATSTAND;
 	pGameDataObj->m_FlagCarrierBlue = FLAG_ATSTAND;*/
 
@@ -235,7 +238,7 @@ void CGameControllerFNG2::OnCharacterSpawn(class CCharacter *pChr)
 	pChr->GiveWeapon(WEAPON_HAMMER, -1);
 	pChr->GiveWeapon(WEAPON_RIFLE, -1);
 }
-	
+
 int CGameControllerFNG2::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon)
 {
 	// do scoreing
@@ -256,7 +259,7 @@ int CGameControllerFNG2::OnCharacterDeath(class CCharacter *pVictim, class CPlay
 		} else if(Weapon == WEAPON_SPIKE_NORMAL){
 			if(pKiller->GetCharacter()) GameServer()->MakeLaserTextPoints(pKiller->GetCharacter()->m_Pos, pKiller->GetCID(), m_Config.m_SvPlayerScoreSpikeNormal);
 			pKiller->m_Stats.m_GrabsNormal++;
-			pVictim->GetPlayer()->m_Stats.m_Deaths++;		
+			pVictim->GetPlayer()->m_Stats.m_Deaths++;
 			m_aTeamscore[pKiller->GetTeam()] += m_Config.m_SvTeamScoreSpikeNormal;
 			pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*.5f;
 		} else if(Weapon == WEAPON_SPIKE_RED){
@@ -266,7 +269,7 @@ int CGameControllerFNG2::OnCharacterDeath(class CCharacter *pVictim, class CPlay
 				m_aTeamscore[TEAM_RED] += m_Config.m_SvTeamScoreSpikeTeam;
 				if(pKiller->GetCharacter()) GameServer()->MakeLaserTextPoints(pKiller->GetCharacter()->m_Pos, pKiller->GetCID(), m_Config.m_SvPlayerScoreSpikeTeam);
 			} else {
-				pKiller->m_Stats.m_GrabsFalse++;				
+				pKiller->m_Stats.m_GrabsFalse++;
 				m_aTeamscore[TEAM_BLUE] += m_Config.m_SvTeamScoreSpikeFalse;
 				if(pKiller->GetCharacter()) GameServer()->MakeLaserTextPoints(pKiller->GetCharacter()->m_Pos, pKiller->GetCID(), m_Config.m_SvPlayerScoreSpikeFalse);
 			}
@@ -306,7 +309,7 @@ int CGameControllerFNG2::OnCharacterDeath(class CCharacter *pVictim, class CPlay
 		}
 	}
 	if(Weapon == WEAPON_SELF){
-		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*.75f;		
+		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*.75f;
 	} else if (Weapon == WEAPON_WORLD)
 		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*.75f;
 	return 0;

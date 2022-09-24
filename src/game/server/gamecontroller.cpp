@@ -6,20 +6,28 @@
 #include <game/generated/protocol.h>
 
 #include "entities/pickup.h"
+
 #include "gamecontroller.h"
 #include "gamecontext.h"
 
 #include <time.h>
 
-IGameController::IGameController(class CGameContext *pGameServer) : 
+/* Repeek */
+#include "repeekethami.h"
+
+int rpeth_nspdvotes;
+int rpeth_nmapvotes;
+int rpeth_nmodvotes;
+
+IGameController::IGameController(class CGameContext *pGameServer) :
 	m_Config(g_Config)
 {
 	m_CustomConfig = false;
-	
+
 	m_pGameServer = pGameServer;
 	m_pServer = m_pGameServer->Server();
 	m_pGameType = "unknown";
-	
+
 	DoWarmup(m_Config.m_SvWarmup);
 	m_UnpauseTimer = 0;
 	m_GameOverTick = -1;
@@ -43,7 +51,7 @@ IGameController::IGameController(class CGameContext *pGameServer, CConfiguration
 	m_Config(pConfig)
 {
 	m_CustomConfig = true;
-	
+
 	m_pGameServer = pGameServer;
 	m_pServer = m_pGameServer->Server();
 	m_pGameType = "unknown";
@@ -209,13 +217,21 @@ void IGameController::EndRound()
 	if(m_Warmup) // game can't end when we are running warmup
 		return;
 
+	/* Repeek */
+	ShuffleTeams();
 	GameServer()->m_World.m_Paused = true;
+
 	m_GameOverTick = Server()->Tick();
 	m_SuddenDeath = 0;
 }
 
 void IGameController::ResetGame()
 {
+	/* Repeek */
+	rpeth_nspdvotes = 0;
+	rpeth_nmapvotes = 0;
+	rpeth_nmodvotes = 0;
+
 	GameServer()->m_World.m_ResetRequested = true;
 }
 
@@ -258,6 +274,10 @@ void IGameController::StartRound()
 
 void IGameController::ChangeMap(const char *pToMap)
 {
+	/* Repeek */
+	if (!strcmp(pToMap, m_Config.m_SvMap))
+		return;
+
 	str_copy(m_aMapWish, pToMap, sizeof(m_aMapWish));
 	EndRound();
 }
@@ -667,7 +687,7 @@ int IGameController::GetAutoTeam(int NotThisID)
 bool IGameController::CanJoinTeam(int Team, int NotThisID)
 {
 	//if(m_Config.m_SvTournamentMode) return false;
-	
+
 	if(Team == TEAM_SPECTATORS || (GameServer()->m_apPlayers[NotThisID] && GameServer()->m_apPlayers[NotThisID]->GetTeam() != TEAM_SPECTATORS))
 		return true;
 
@@ -721,7 +741,7 @@ bool IGameController::CanChangeTeam(CPlayer *pPlayer, int JoinTeam)
 		GameServer()->SendChatTarget(pPlayer->GetCID(), "You can't change Teams in Tournaments.");
 		return false;
 	}*/
-	
+
 	int aT[2] = {0, 0};
 
 	if (!IsTeamplay() || JoinTeam == TEAM_SPECTATORS || !m_Config.m_SvTeambalanceTime)
@@ -838,7 +858,7 @@ void IGameController::ShuffleTeams()
 				else if(CounterBlue == PlayerTeam)
 					GameServer()->m_apPlayers[i]->SetTeam(TEAM_RED, false);
 				else
-				{	
+				{
 					if(rand() % 2)
 					{
 						GameServer()->m_apPlayers[i]->SetTeam(TEAM_BLUE, false);
@@ -850,10 +870,10 @@ void IGameController::ShuffleTeams()
 						++CounterRed;
 					}
 				}
-				
+
 				TeamPlayersAfterShuffle[GameServer()->m_apPlayers[i]->GetTeam()].SetBitOfPosition(i);
 			}
-		}		
+		}
 	} while ((TeamPlayers[0].Count() > 1 || TeamPlayers[1].Count() > 1) && (TeamPlayers[0] == TeamPlayersAfterShuffle[0] || TeamPlayers[0] == TeamPlayersAfterShuffle[1]));
 }
 
