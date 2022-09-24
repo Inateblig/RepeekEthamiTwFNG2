@@ -388,14 +388,14 @@ void CGameContext::StartVote(const char *pDesc, const char *pCommand, const char
 
 	nclients = 0;
 	for (i = 0; i < MAX_CLIENTS; i++)
-		if (m_apPlayers[i])
+		if (m_apPlayers[i] && m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
 			nclients++;
 
 	/* Check if a speedvote has already been started */
 	if ((sp = strchr(pDesc, ' ')) && !strncmp(pDesc, "speed", sp - pDesc)) {
 		printf("speed vote\n");
-		if (nclients > g_Config.SvRpEthNClients) {
-			if (rpeth_nspdvotes >= SvRpEthNSpVotes) {
+		if (nclients > g_Config.m_SvRpEthNClients) {
+			if (rpeth_nspdvotes >= g_Config.m_SvRpEthNSpVotes) {
 				SendChat(-1, CGameContext::CHAT_ALL, "Vote failed, enough speed votes this round!");
 				return;
 			}
@@ -404,8 +404,8 @@ void CGameContext::StartVote(const char *pDesc, const char *pCommand, const char
 	}
 	if ((sp = strchr(pCommand, ' ')) && !strncmp(pCommand, "change_map", sp - pCommand)) {
 		printf("map vote\n");
-		if (nclients > g_Config.SvRpEthNClients) {
-			if (rpeth_nmapvotes >= g_Config.SvRpEthNMapVotes) {
+		if (nclients > g_Config.m_SvRpEthNClients) {
+			if (rpeth_nmapvotes >= g_Config.m_SvRpEthNMapVotes) {
 				SendChat(-1, CGameContext::CHAT_ALL, "Vote failed, enough map votes this round!");
 				return;
 			}
@@ -415,8 +415,8 @@ void CGameContext::StartVote(const char *pDesc, const char *pCommand, const char
 	/* Check if a gametype vote has already been started */
 	if ((sp = strchr(pCommand, ' ')) && !strncmp(pCommand, "sv_gametype", sp - pCommand)) {
 		printf("mode vote\n");
-		if (nclients > g_Config.SvRpEthNClients) {
-			if (rpeth_nmodvotes >= g_Config.SvRpEthNModeVotes) {
+		if (nclients > g_Config.m_SvRpEthNClients) {
+			if (rpeth_nmodvotes >= g_Config.m_SvRpEthNModeVotes) {
 				SendChat(-1, CGameContext::CHAT_ALL, "Vote failed, enough gamemode votes this round!");
 				return;
 			}
@@ -909,16 +909,17 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					return;
 				}
 
-				if(m_Config->m_SvVoteKickMin)
+				/* Repeek */
+				if(g_Config.m_SvRpEthMinNClientsToAllowKick)
 				{
 					int PlayerNum = 0;
 					for(int i = 0; i < MAX_CLIENTS; ++i)
 						if(m_apPlayers[i] && m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
 							++PlayerNum;
 
-					if(PlayerNum < m_Config->m_SvVoteKickMin)
+					if(PlayerNum < g_Config.m_SvRpEthMinNClientsToAllowKick)
 					{
-						str_format(aChatmsg, sizeof(aChatmsg), "Kick voting requires %d players on the server", m_Config->m_SvVoteKickMin);
+						str_format(aChatmsg, sizeof(aChatmsg), "Kick voting requires %d players on the server", g_Config.m_SvRpEthMinNClientsToAllowKick);
 						SendChatTarget(ClientID, aChatmsg);
 						return;
 					}
@@ -931,11 +932,11 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					SendChatTarget(ClientID, "Invalid client id to kick");
 					return;
 				}
-				if(KickID == ClientID)
-				{
-					SendChatTarget(ClientID, "You can't kick yourself");
-					return;
-				}
+//				if(KickID == ClientID)
+//				{
+//					SendChatTarget(ClientID, "You can't kick yourself");
+//					return;
+//				}
 				if(Server()->IsAuthed(KickID))
 				{
 					SendChatTarget(ClientID, "You can't kick admins");
@@ -962,6 +963,22 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				{
 					SendChatTarget(ClientID, "Server does not allow voting to move players to spectators");
 					return;
+				}
+
+				/* Repeek */
+				if(g_Config.m_SvRpEthMinNClientsToAllowSpec)
+				{
+					int PlayerNum = 0;
+					for(int i = 0; i < MAX_CLIENTS; ++i)
+						if(m_apPlayers[i] && m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
+							++PlayerNum;
+
+					if(PlayerNum < g_Config.m_SvRpEthMinNClientsToAllowKick)
+					{
+						str_format(aChatmsg, sizeof(aChatmsg), "Spec voting requires %d players on the server", g_Config.m_SvRpEthMinNClientsToAllowSpec);
+						SendChatTarget(ClientID, aChatmsg);
+						return;
+					}
 				}
 
 				int SpectateID = str_toint(pMsg->m_Value);

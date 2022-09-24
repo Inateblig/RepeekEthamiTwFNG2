@@ -120,7 +120,10 @@ MACRO_CONFIG_INT(SvConnlimitTime, sv_connlimit_time, 20, 0, 1000, CFGFLAG_SERVER
 MACRO_CONFIG_INT(SvRpEthNSpVotes, sv_rpeth_nspeed_votes, 1, 0, 16, CFGFLAG_SERVER, "Speed votes this round")
 MACRO_CONFIG_INT(SvRpEthNMapVotes, sv_rpeth_nmap_votes, 2, 0, 16, CFGFLAG_SERVER, "Map votes this round")
 MACRO_CONFIG_INT(SvRpEthNModeVotes, sv_rpeth_nmode_votes, 1, 0, 16, CFGFLAG_SERVER, "Gamemode votes this round")
-MACRO_CONFIG_INT(SvRpEthNClients, sv_rpeth_nclients, 2, 0, 16, CFGFLAG_SERVER, "Clients to allow all rpeth votes this round")
+MACRO_CONFIG_INT(SvRpEthNClients, sv_rpeth_nclients, 2, 0, 16, CFGFLAG_SERVER, "Maximum nubmer of clients to allow all rpeth votes this round")
+
+MACRO_CONFIG_INT(SvRpEthMinNClientsToAllowKick, sv_rpeth_min_nclients_to_allow_kick, 6, 0, 16, CFGFLAG_SERVER, "Minimum number of clients to allow all rpeth kick vote this round")
+MACRO_CONFIG_INT(SvRpEthMinNClientsToAllowSpec, sv_rpeth_min_nclients_to_allow_spec, 6, 0, 16, CFGFLAG_SERVER, "Minimum number of clients to allow all rpeth spec vote this round")
 
 #endif
 
