@@ -218,7 +218,8 @@ void IGameController::EndRound()
 		return;
 
 	/* Repeek */
-	ShuffleTeams();
+	if (!strcmp(g_Config.m_SvGametype, "fng2solo") == 0 && !strcmp(g_Config.m_SvGametype, "fng2boomsolo") == 0)
+		ShuffleTeams();
 	GameServer()->m_World.m_Paused = true;
 
 	m_GameOverTick = Server()->Tick();
